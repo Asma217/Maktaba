@@ -16,28 +16,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ElOuedUniv.maktaba.data.model.Book
-import com.ElOuedUniv.maktaba.presentation.book.BookViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookListView(
     onCategoriesClick: () -> Unit = {},
+    onAddBookClick: () -> Unit = {},
+    onBookClick: (String) -> Unit = {},
     viewModel: BookViewModel = hiltViewModel()
 ) {
-    val books by viewModel.books.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    
-    // TODO: Exercise 3 - Use a single delegated state from the ViewModel
-    // val uiState by viewModel.uiState.collectAsState()
-
-    if (/* TODO: uiState.isAddingBook */ false) {
-        AddBookDialog(
-            onDismiss = { /* TODO: viewModel.onAction(BookUiAction.OnDismissAddBook) */ },
-            onConfirm = { title, isbn, pages ->
-                /* TODO: viewModel.onAction(BookUiAction.OnAddBookConfirm(title, isbn, pages)) */
-            }
-        )
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -58,14 +46,17 @@ fun BookListView(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { 
-                /* TODO: Exercise 3 - viewModel.onAction(BookUiAction.OnAddBookClick) */
-            }) {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.onAction(BookUiAction.OnAddBookClick)
+                }
+            ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                    imageVector = Icons.Default.Add,
                     contentDescription = "Add Book"
                 )
             }
+
         }
     ) { paddingValues ->
         Box(
@@ -73,29 +64,44 @@ fun BookListView(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
+            if (uiState.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
-                if (books.isEmpty()) {
+                if (uiState.books.isEmpty()) {
                     EmptyBooksMessage(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
                     BookList(
-                        books = books,
+                        books = uiState.books,
+                        onBookClick = onBookClick,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
             }
         }
+        if (uiState.isAddingBook) {
+            AddBookDialog(
+                onDismiss = {
+                    viewModel.onAction(BookUiAction.OnDismissAddBook)
+                },
+                onConfirm = { title, isbn, nbPages ->
+                    viewModel.onAction(
+                        BookUiAction.OnAddBookConfirm(title, isbn, nbPages)
+                    )
+                }
+            )
+        }
+
     }
 }
 
 @Composable
 fun BookList(
     books: List<Book>,
+    onBookClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -104,15 +110,15 @@ fun BookList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(books) { book ->
-            BookItem(book = book)
+            BookItem(book = book, onClick = { onBookClick(book.isbn) })
         }
     }
 }
-
 @Composable
-fun BookItem(book: Book) {
+fun BookItem(book: Book, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -125,13 +131,13 @@ fun BookItem(book: Book) {
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
-              ) {
+            ) {
                 Column {
                     Text(
                         text = "ISBN:",
@@ -143,7 +149,7 @@ fun BookItem(book: Book) {
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                
+
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "Pages:",
@@ -178,10 +184,9 @@ fun EmptyBooksMessage(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Complete the TODO exercises in BookRepository.kt",
+            text = "Click the + button to add a new book",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
-
