@@ -33,7 +33,7 @@ fun NavGraph(
             BookListView(
                 onCategoriesClick = { navController.navigate(Screen.CategoryList.route) },
                 onAddBookClick = { navController.navigate(Screen.AddBook.route) },
-                onBookClick = { isbn -> 
+                onBookClick = { isbn: String ->
                     navController.navigate(Screen.BookDetail.createRoute(isbn))
                 }
             )
