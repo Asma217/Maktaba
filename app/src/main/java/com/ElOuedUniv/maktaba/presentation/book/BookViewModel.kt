@@ -56,10 +56,13 @@ class BookViewModel @Inject constructor(
                 val newBook = Book(
                     isbn = action.isbn,
                     title = action.title,
+                    author = "Unknown", // Added missing mandatory parameter
                     nbPages = action.nbPages
                 )
-                addBookUseCase(newBook)
-                _uiState.update { it.copy(isAddingBook = false) }
+                viewModelScope.launch {
+                    addBookUseCase(newBook)
+                    _uiState.update { it.copy(isAddingBook = false) }
+                }
             }
         }
     }

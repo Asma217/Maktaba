@@ -1,10 +1,13 @@
 package com.ElOuedUniv.maktaba.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ElOuedUniv.maktaba.data.repository.OnboardingRepository
 import com.ElOuedUniv.maktaba.presentation.book.BookListView
 import com.ElOuedUniv.maktaba.presentation.book.add.AddBookView
 import com.ElOuedUniv.maktaba.presentation.book.detail.BookDetailView
@@ -13,14 +16,20 @@ import com.ElOuedUniv.maktaba.presentation.onboarding.OnboardingView
 
 @Composable
 fun NavGraph(
+    onboardingRepository: OnboardingRepository,
     navController: NavHostController = rememberNavController()
 ) {
+    val hasOnboarded by onboardingRepository.hasCompletedOnboarding
+        .collectAsState(initial = false)
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Onboarding.route
+        startDestination = if (hasOnboarded) Screen.BookList.route else Screen.Onboarding.route
     ) {
         composable(Screen.Onboarding.route) {
             OnboardingView(
+                navController = navController,
+                onboardingRepository = onboardingRepository,
                 onNavigateToLibrary = {
                     navController.navigate(Screen.BookList.route) {
                         popUpTo(Screen.Onboarding.route) { inclusive = true }

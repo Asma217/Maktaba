@@ -1,12 +1,14 @@
 package com.ElOuedUniv.maktaba.presentation.book.add
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.ElOuedUniv.maktaba.data.model.Book
 import com.ElOuedUniv.maktaba.domain.usecase.AddBookUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,9 +33,9 @@ class AddBookViewModel @Inject constructor(
                 _uiState.update { it.copy(nbPages = action.pages) }
                 validateInputs()
             }
-            AddBookUiAction.OnAddClick -> {
+            is AddBookUiAction.OnAddClick -> {
                 if (_uiState.value.isFormValid) {
-                    addBook()
+                    addBook(action.imageBytes)
                 }
             }
         }
@@ -58,15 +60,24 @@ class AddBookViewModel @Inject constructor(
             )
         }
     }
-
-    private fun addBook() {
+    private fun addBook(imageBytes: ByteArray? = null) {
         val currentState = _uiState.value
-        val book = Book(
-            isbn = currentState.isbn,
-            title = currentState.title,
-            nbPages = currentState.nbPages.toIntOrNull() ?: 0
-        )
-        addBookUseCase(book)
-        _uiState.update { it.copy(isSuccess = true) }
+        _uiState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            try {
+                val book = Book(
+                    isbn = currentState.isbn,
+                    title = currentState.title,
+                    author = "Unknown",
+                    nbPages = currentState.nbPages.toIntOrNull() ?: 0,
+                    imageUrl = ""
+                )
+                addBookUseCase(book, imageBytes)  // ← مرر imageBytes
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Unknown error") }
+            }
+        }
     }
 }

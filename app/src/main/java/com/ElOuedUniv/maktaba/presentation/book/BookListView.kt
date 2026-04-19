@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,11 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.ElOuedUniv.maktaba.R
 import com.ElOuedUniv.maktaba.data.model.Book
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +52,7 @@ fun BookListView(
                         Icon(Icons.Default.GridView, contentDescription = "Grid View")
                     }
                     IconButton(onClick = onCategoriesClick) {
-                        Icon(Icons.Default.List, contentDescription = "Categories")
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Categories")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -105,7 +108,7 @@ fun BookGrid(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(books) { book ->
-            BookCard(book = book, onClick = { onBookClick(book.isbn) })
+            BookCard(book = book, onClick = { onBookClick(book.id ?: "") })
         }
     }
 }
@@ -129,12 +132,16 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                if (book.imageUrl != null) {
+                if (book.imageUrl.isNotEmpty()) {
                     AsyncImage(
                         model = book.imageUrl,
                         contentDescription = book.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.placeholder),
+                        error = painterResource(id = R.drawable.placeholder)
                     )
                 } else {
                     Icon(
@@ -169,20 +176,21 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                 ) {
                     Column {
                         Text(
-                            text = "ISBN",
+                            text = "Author",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = book.isbn.take(5) + "...",
+                            text = book.author,
                             style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1
                         )
                     }
                     
-                    val statusText = if (book.nbPages > 0) "Reading" else "Finished"
-                    val statusIcon = if (book.nbPages > 0) Icons.Default.Bookmark else Icons.Default.CheckCircle
-                    val statusColor = if (book.nbPages > 0) MaterialTheme.colorScheme.primary else Color(0xFF4CAF50)
+                    val statusText = "Ready"
+                    val statusIcon = Icons.Default.CheckCircle
+                    val statusColor = Color(0xFF4CAF50)
 
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
