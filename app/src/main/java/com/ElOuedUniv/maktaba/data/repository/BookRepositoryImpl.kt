@@ -37,4 +37,7 @@ class BookRepositoryImpl @Inject constructor() : BookRepository {
         _booksList.add(book)
         booksFlow.tryEmit(_booksList.toList())
     }
+    override suspend fun getBookById(id: String): Book? {
+        return _booksList.find { it.id == id }
+    }
 }

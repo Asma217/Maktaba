@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -47,8 +49,11 @@ fun NavGraph(
                 }
             )
         }
-        
-        composable(Screen.BookDetail.route) {
+
+        composable(
+            route = Screen.BookDetail.route,
+            arguments = listOf(navArgument("isbn") { type = NavType.StringType })
+        ) {
             BookDetailView(onBackClick = { navController.popBackStack() })
         }
         

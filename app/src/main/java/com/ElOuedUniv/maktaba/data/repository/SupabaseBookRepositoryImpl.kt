@@ -46,4 +46,16 @@ class SupabaseBookRepositoryImpl @Inject constructor(
         // تم حذف id = null لأن الـ Book model لا يسمح بـ null للـ id (String)
         client.postgrest["books"].insert(book.copy(imageUrl = finalImageUrl))
     }
+
+    override suspend fun getBookById(id: String): Book? {
+        return try {
+            client.postgrest["books"]
+                .select {
+                    filter { eq("id", id) }
+                }
+                .decodeSingleOrNull<Book>()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }

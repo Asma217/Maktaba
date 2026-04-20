@@ -3,8 +3,8 @@ package com.ElOuedUniv.maktaba.domain.usecase
 import com.ElOuedUniv.maktaba.data.repository.BookRepository
 import javax.inject.Inject
 
-class GetBookByIsbnUseCase @Inject constructor(
+class GetBookByIdUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
-    suspend operator fun invoke(isbn: String) = bookRepository.getBookByIsbn(isbn)
+    suspend operator fun invoke(id: String) = bookRepository.getBookById(id)
 }
