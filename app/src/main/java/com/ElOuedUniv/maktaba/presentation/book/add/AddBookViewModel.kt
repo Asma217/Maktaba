@@ -15,9 +15,11 @@ import javax.inject.Inject
 class AddBookViewModel @Inject constructor(
     private val addBookUseCase: AddBookUseCase
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(AddBookUiState())
     val uiState = _uiState.asStateFlow()
+
+    private var addBookJob: kotlinx.coroutines.Job? = null
 
     fun onAction(action: AddBookUiAction) {
         when (action) {
@@ -35,7 +37,9 @@ class AddBookViewModel @Inject constructor(
             }
             is AddBookUiAction.OnAddClick -> {
                 if (_uiState.value.isFormValid) {
-                    addBook(action.imageBytes)
+                    if (checkPdfSize(action.pdfBytes)) {
+                        addBook(action.imageBytes, action.pdfBytes)
+                    }
                 }
             }
         }
@@ -51,7 +55,7 @@ class AddBookViewModel @Inject constructor(
         val pagesInt = nbPages.toIntOrNull()
         val pagesError = if (pagesInt == null || pagesInt <= 0) "Pages must be a positive number" else null
 
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 titleError = titleError,
                 isbnError = isbnError,
@@ -60,24 +64,96 @@ class AddBookViewModel @Inject constructor(
             )
         }
     }
-    private fun addBook(imageBytes: ByteArray? = null) {
-        val currentState = _uiState.value
-        _uiState.update { it.copy(isLoading = true) }
 
-        viewModelScope.launch {
-            try {
-                val book = Book(
+    private fun checkPdfSize(pdfBytes: ByteArray?): Boolean {
+        if (pdfBytes == null) {
+            _uiState.update {
+                it.copy(errorMessage = "الرجاء اختيار ملف PDF أولاً")
+            }
+            return false
+        }
+
+        val sizeMB = pdfBytes.size / (1024.0 * 1024.0)
+
+        return when {
+            sizeMB > 30 -> {
+                _uiState.update {
+                    it.copy(errorMessage = "الكتاب كبير جداً (%.1f MB). الحد الأقصى 30 MB".format(sizeMB))
+                }
+                false
+            }
+            sizeMB > 15 -> {
+                _uiState.update {
+                    it.copy(errorMessage = "⚠️ الكتاب كبير (%.1f MB). الرفع قد ياخذ دقيقة أو أكثر".format(sizeMB))
+                }
+                true
+            }
+            else -> true
+        }
+    }
+
+    private fun addBook(imageBytes: ByteArray? = null, pdfBytes: ByteArray? = null) {
+        addBookJob?.cancel()
+
+        val currentState = _uiState.value
+
+        pdfBytes?.let {
+            val sizeMB = it.size / (1024.0 * 1024.0)
+            android.util.Log.d("MAKTABA", "📚 رفع PDF بحجم: %.2f MB".format(sizeMB))
+        }
+
+        _uiState.update {
+            it.copy(
+                isLoading = true,
+                isSuccess = false,
+                errorMessage = null
+            )
+        }
+
+        addBookJob = viewModelScope.launch {
+            val result = addBookUseCase(
+                Book(
                     isbn = currentState.isbn,
                     title = currentState.title,
                     author = "Unknown",
                     nbPages = currentState.nbPages.toIntOrNull() ?: 0,
-                    imageUrl = ""
-                )
-                addBookUseCase(book, imageBytes)  // ← مرر imageBytes
-                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.message ?: "Unknown error") }
-            }
+                    imageUrl = "",
+                    pdfUrl = ""
+                ),
+                imageBytes,
+                pdfBytes
+            )
+
+            result.fold(
+                onSuccess = {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            errorMessage = null
+                        )
+                    }
+                },
+                onFailure = { exception ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = false,
+                            errorMessage = "❌ فشل الرفع: ${exception.message ?: "خطأ غير معروف"}"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun cancelUpload() {
+        addBookJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = "تم إلغاء الرفع"
+            )
         }
     }
 }

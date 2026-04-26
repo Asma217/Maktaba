@@ -39,14 +39,30 @@ fun NavGraph(
                 }
             )
         }
-        
+
         composable(Screen.BookList.route) {
             BookListView(
-                onCategoriesClick = { navController.navigate(Screen.CategoryList.route) },
-                onAddBookClick = { navController.navigate(Screen.AddBook.route) },
-                onBookClick = { isbn -> 
+                onCategoriesClick = {
+                    navController.navigate(Screen.CategoryList.route)
+                },
+                onAddBookClick = {
+                    navController.navigate(Screen.AddBook.route)
+                },
+                onBookClick = { isbn ->
                     navController.navigate(Screen.BookDetail.createRoute(isbn))
                 }
+            )
+        }
+
+        composable(Screen.AddBook.route) {
+            AddBookView(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.CategoryList.route) {
+            CategoryListView(
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -54,15 +70,9 @@ fun NavGraph(
             route = Screen.BookDetail.route,
             arguments = listOf(navArgument("isbn") { type = NavType.StringType })
         ) {
-            BookDetailView(onBackClick = { navController.popBackStack() })
-        }
-        
-        composable(Screen.CategoryList.route) {
-            CategoryListView(onBackClick = { navController.popBackStack() })
-        }
-        
-        composable(Screen.AddBook.route) {
-            AddBookView(onBackClick = { navController.popBackStack() })
+            BookDetailView(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }

@@ -29,24 +29,6 @@ class SupabaseBookRepositoryImpl @Inject constructor(
             .decodeSingleOrNull<Book>()
     }
 
-    override suspend fun addBook(book: Book, imageBytes: ByteArray?) {
-        var finalImageUrl = book.imageUrl
-
-        if (imageBytes != null) {
-            try {
-                val fileName = "cover_${System.currentTimeMillis()}.jpg"
-                client.storage["book_cover"].upload(fileName, imageBytes)
-                finalImageUrl = client.storage["book_cover"].publicUrl(fileName)
-            } catch (e: Exception) {
-
-                finalImageUrl = ""
-            }
-        }
-
-        // تم حذف id = null لأن الـ Book model لا يسمح بـ null للـ id (String)
-        client.postgrest["books"].insert(book.copy(imageUrl = finalImageUrl))
-    }
-
     override suspend fun getBookById(id: String): Book? {
         return try {
             client.postgrest["books"]
@@ -57,5 +39,40 @@ class SupabaseBookRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             null
         }
+    }
+
+    override suspend fun addBook(book: Book, imageBytes: ByteArray?, pdfBytes: ByteArray?): Result<Unit> = try {
+
+        var finalImageUrl = ""
+        var finalPdfUrl = ""
+
+        // رفع الصورة
+        if (imageBytes != null && imageBytes.isNotEmpty()) {
+            val fileName = "cover_${System.currentTimeMillis()}.jpg"
+            client.storage["book_cover"].upload(fileName, imageBytes)
+            finalImageUrl = client.storage["book_cover"].publicUrl(fileName)
+            android.util.Log.d("MAKTABA", "✅ Image URL: $finalImageUrl")
+        }
+
+        // رفع الـ PDF
+        if (pdfBytes != null && pdfBytes.isNotEmpty()) {
+            val fileName = "book_${System.currentTimeMillis()}.pdf"
+            client.storage["book_pdfs"].upload(fileName, pdfBytes)
+            finalPdfUrl = client.storage["book_pdfs"].publicUrl(fileName)
+            android.util.Log.d("MAKTABA", "✅ PDF URL: $finalPdfUrl")
+        }
+
+        val bookToInsert = book.copy(
+            id = null,
+            imageUrl = finalImageUrl,  // ← صح
+            pdfUrl = finalPdfUrl
+        )
+
+        client.postgrest["books"].insert(bookToInsert)
+        Result.success(Unit)
+
+    } catch (e: Exception) {
+        android.util.Log.e("MAKTABA", "❌ FAILED: ${e.message}")
+        Result.failure(e)
     }
 }

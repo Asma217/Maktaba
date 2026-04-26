@@ -7,7 +7,11 @@ import javax.inject.Inject
 class AddBookUseCase @Inject constructor(
     private val bookRepository: BookRepository
 ) {
-    suspend operator fun invoke(book: Book, imageBytes: ByteArray? = null) {
-        bookRepository.addBook(book, imageBytes)
+    suspend operator fun invoke(
+        book: Book,
+        imageBytes: ByteArray? = null,
+        pdfBytes: ByteArray? = null
+    ): Result<Unit> {
+        return bookRepository.addBook(book, imageBytes, pdfBytes)
     }
 }

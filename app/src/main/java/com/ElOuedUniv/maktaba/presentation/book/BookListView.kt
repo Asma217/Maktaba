@@ -132,7 +132,7 @@ fun BookCard(book: Book, onClick: () -> Unit) {
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                if (book.imageUrl.isNotEmpty()) {
+                if (!book.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = book.imageUrl,
                         contentDescription = book.title,

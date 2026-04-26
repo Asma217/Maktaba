@@ -1,22 +1,25 @@
 package com.ElOuedUniv.maktaba.presentation.book.detail
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,18 +34,19 @@ fun BookDetailView(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { 
+                title = {
                     Text(
-                        "BOOK DETAILS", 
+                        "BOOK DETAILS",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 2.sp
                         )
-                    ) 
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -81,7 +85,7 @@ fun BookDetailView(
                         elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
-                            if (book.imageUrl != null) {
+                            if (!book.imageUrl.isNullOrEmpty()) {
                                 AsyncImage(
                                     model = book.imageUrl,
                                     contentDescription = book.title,
@@ -92,7 +96,9 @@ fun BookDetailView(
                                 Icon(
                                     imageVector = Icons.Default.Book,
                                     contentDescription = null,
-                                    modifier = Modifier.size(120.dp).align(Alignment.Center),
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .align(Alignment.Center),
                                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                 )
                             }
@@ -120,7 +126,6 @@ fun BookDetailView(
                         )
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            // Reading Status
                             MetadataItem(
                                 icon = Icons.Default.MenuBook,
                                 label = "Reading Status:",
@@ -144,7 +149,7 @@ fun BookDetailView(
                             Row(modifier = Modifier.fillMaxWidth()) {
                                 Box(modifier = Modifier.weight(1f)) {
                                     MetadataItem(
-                                        icon = Icons.Default.Straighten, // Ruler
+                                        icon = Icons.Default.Straighten,
                                         label = "Pages:",
                                         value = if (book.nbPages > 0) "${book.nbPages}" else "Not set"
                                     )
@@ -168,6 +173,30 @@ fun BookDetailView(
                                 label = "Format:",
                                 value = "Hardcover (Premium)"
                             )
+                        }
+                    }
+
+
+                    if (!book.pdfUrl.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                val intent = com.rajat.pdfviewer.PdfViewerActivity.launchPdfFromUrl(
+                                    context = context,
+                                    pdfUrl = book.pdfUrl,
+                                    pdfTitle = book.title,
+                                    saveTo = com.rajat.pdfviewer.util.saveTo.ASK_EVERYTIME
+                                )
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.MenuBook, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("اقرأ الكتاب", style = MaterialTheme.typography.titleMedium)
                         }
                     }
                 }
